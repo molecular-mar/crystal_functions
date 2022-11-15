@@ -2346,6 +2346,104 @@ class Crystal_density():
                     self.la4.extend([int(x) for x in data[j].split()])
                     j += 1
         # return self
+        
+class Crystal_red_density():
+    # WORK IN PROGRESS
+    # Returns a crystal_red_density object
+
+    def __init__(self):
+
+        pass
+
+    def read_cry_density(self, printout_output):
+        # printout_output should be an output file from a properties
+        # run using an input similar to:
+        # ---
+        # BASISSET
+        # 1         <- # of data to be printed
+        # 59 N      <- id for data to be printed, N indicates g-vector
+        # END
+        # ---
+        # N>0 indicates number of consecutive g-vector reducible P 
+        # matrices to be printed. N<0 prints the |N| g-vector P matrix
+        # only.
+        # Probably this could also work with another matrices 
+        # (S and/or F).
+        self.file_name = printout_output
+
+        import sys
+        import numpy as np
+        import re
+
+        try:
+            file = open(self.file_name, 'r')
+            data = file.readlines()
+            file.close()
+        except:
+            print('EXITING: a CRYSTAL properties output file needs to be specified')
+            sys.exit(1)
+
+        self.all_file = data
+
+        self.n_g = []
+        self.g_vectors = []
+        self.p_matrices = []
+
+        for id_line,line in enumerate(data):
+            if re.match(r'^ N. OF ATOMS PER CELL', line):
+                self.n_atoms = int(
+                    line.split('CELL')[1].split()[0]
+                    )
+                self.n_shells = int(
+                    data[id_line+1].split('SHELLS')[1].split()[0]
+                    )
+                self.n_ao = int(
+                    data[id_line+2].split('AO')[1].split()[0]
+                    )   
+                self.n_electrons = int(
+                    data[id_line+3].split('CELL')[1].split()[0]
+                    )
+                self.n_core_electrons = int(
+                    data[id_line+4].split('CELL')[1].split()[0]
+                    )   
+            elif re.match(r'^ MATRIX SIZE: P(G)', line):
+                self.p_mat_size = int(
+                    line.split('P(G)')[1].split()[0]
+                    )
+            elif re.match(r'^ DENSITY MATRIX',line):
+                self.n_g.append(
+                    int(line.split('N.')[1].split('(')[0])
+                    )
+                g_vector_str = line.split('(')[1]
+                g_vector_current = [
+                    int(g_vector_str[0:3]),
+                    int(g_vector_str[3:6]),
+                    int(g_vector_str[7:9])
+                    ]
+                self.g_vectors.append(g_vector_current)
+
+                #Parameters used given the format of the output
+                printLimit = 10
+                printSkip = 4
+                skipNumber = int(self.n_ao / printLimit)
+                p_Mat = []
+                firstMat = True
+                for k in range(skipNumber+1):
+                    if k == skipNumber:
+                        printSkip -= 1
+                    for i in range(0,self.n_ao):
+                        lineId = id_line + printSkip + i 
+                        iValues = data[lineId].split()
+                        breakpoint()
+                        if firstMat:
+                            p_Mat.append([float(x) for x in iValues[1:]])
+                        else:
+                            p_Mat[i].extend([float(x) for x in iValues[1:]])
+                    printSkip += 3 - (k*10) + self.n_ao
+                    firstMat = False
+                self.p_matrices.append(p_Mat)
+                #data[i+3].split()
+            
 
 
 def cry_combine_density(density1, density2, density3, new_density='new_density.f98', spin_pol=False):

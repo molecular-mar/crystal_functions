@@ -1,0 +1,8 @@
+crystal_functions
+=================
+
+.. toctree::
+   :maxdepth: 4
+
+   CRYSTALpytools
+   setup
